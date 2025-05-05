@@ -6,119 +6,177 @@ const path = require('path');
 async function fetchAllCourses() {
   try {
     console.log('Fetching all courses...');
-    const params = { 
-      'featured-only': 0,
-      'page_size': 100
-    };
-    if (process.env.CMP_API_KEY) {
-      params.hapikey = process.env.CMP_API_KEY;
-    }
     
     // First, get the total count
+    console.log('\nMaking initial API request...');
     const initialResponse = await axios.get(
       'https://d2uj9jw4vo3cg6.cloudfront.net/V1/storeview/default/search/products',
-      { params: { ...params, page: 0 } }
+      { 
+        params: { 
+          'featured-only': 0,
+          'page_size': 20,
+          'page': 1 // Start from page 1 since page 0 returns the same data
+        }
+      }
     );
     
     const totalCourses = initialResponse.data.total || 0;
-    console.log(`Total courses available: ${totalCourses}`);
-    
+    const pageSize = 20; // Use fixed page size
+    console.log('\nAPI Response Details:', {
+      total: initialResponse.data.total,
+      items_received: initialResponse.data.items?.length,
+      first_item: initialResponse.data.items?.[0] ? {
+        id: initialResponse.data.items[0].id,
+        sku: initialResponse.data.items[0].sku,
+        name: initialResponse.data.items[0].name
+      } : null,
+      last_item: initialResponse.data.items?.[initialResponse.data.items.length - 1] ? {
+        id: initialResponse.data.items[initialResponse.data.items.length - 1].id,
+        sku: initialResponse.data.items[initialResponse.data.items.length - 1].sku,
+        name: initialResponse.data.items[initialResponse.data.items.length - 1].name
+      } : null
+    });
+
     // Calculate total pages needed
-    const pageSize = 100;
     const totalPages = Math.ceil(totalCourses / pageSize);
-    console.log(`Will fetch ${totalPages} pages with ${pageSize} items per page`);
+    console.log(`\nPagination Details:`);
+    console.log(`Total courses reported by API: ${totalCourses}`);
+    console.log(`Page size: ${pageSize}`);
+    console.log(`Calculated total pages: ${totalPages}`);
+
+    // Start with the items from the initial response
+    let allCourses = initialResponse.data.items || [];
+    console.log(`\nStarting with ${allCourses.length} courses from initial response`);
     
-    // Fetch all pages
-    let allCourses = [];
-    let currentPage = 0;
+    // Track pages we've requested
+    let requestedPages = new Set([1]); // Mark page 1 as already requested
+    let failedPages = new Set();
+    const MAX_RETRIES = 3;
     
-    while (currentPage < totalPages) {
-      try {
-        console.log(`\nFetching page ${currentPage + 1}/${totalPages}...`);
-        const pageParams = {
-          ...params,
-          page: currentPage
-        };
-        
-        const pageResponse = await axios.get(
-          'https://d2uj9jw4vo3cg6.cloudfront.net/V1/storeview/default/search/products',
-          { params: pageParams }
-        );
-        
-        const pageData = pageResponse.data;
-        const pageItems = pageData.items || [];
-        
-        console.log(`Page ${currentPage + 1} response:`, {
-          total: pageData.total,
-          page_size: pageData.page_size,
-          items_received: pageItems.length,
-          first_item_id: pageItems[0]?.id,
-          last_item_id: pageItems[pageItems.length - 1]?.id
-        });
-        
-        if (pageItems.length === 0) {
-          console.log('No items received for this page, stopping pagination');
-          break;
-        }
-        
-        allCourses = [...allCourses, ...pageItems];
-        console.log(`Total courses collected so far: ${allCourses.length}`);
-        
-        // Add a small delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+    // Fetch remaining pages, starting from page 2 since we already have page 1
+    let currentPage = 2;
+    
+    while (currentPage <= totalPages) {
+      let retryCount = 0;
+      let success = false;
+      
+      // Check if we've already requested this page
+      if (requestedPages.has(currentPage)) {
+        console.error(`ERROR: Page ${currentPage} was already requested! Skipping...`);
         currentPage++;
-      } catch (error) {
-        console.error(`Error fetching page ${currentPage + 1}:`, error.message);
-        // If we get an error, wait longer and try again
-        await new Promise(resolve => setTimeout(resolve, 5000));
         continue;
       }
+      
+      while (retryCount < MAX_RETRIES && !success) {
+        try {
+          console.log(`\nFetching page ${currentPage}/${totalPages} (Attempt ${retryCount + 1}/${MAX_RETRIES})...`);
+          const pageParams = {
+            'featured-only': 0,
+            'page_size': pageSize,
+            'page': currentPage
+          };
+          
+          console.log('Request params:', pageParams);
+          requestedPages.add(currentPage); // Mark this page as requested
+          
+          const pageResponse = await axios.get(
+            'https://d2uj9jw4vo3cg6.cloudfront.net/V1/storeview/default/search/products',
+            { params: pageParams }
+          );
+          
+          const pageData = pageResponse.data;
+          const pageItems = pageData.items || [];
+          
+          // Log page details
+          console.log(`\nPage ${currentPage} Details:`, {
+            requested_page: currentPage,
+            received_page: pageData.current_page,
+            items_received: pageItems.length,
+            total_so_far: allCourses.length,
+            expected_total: totalCourses,
+            first_item: pageItems[0] ? {
+              id: pageItems[0].id,
+              sku: pageItems[0].sku,
+              name: pageItems[0].name
+            } : null,
+            last_item: pageItems[pageItems.length - 1] ? {
+              id: pageItems[pageItems.length - 1].id,
+              sku: pageItems[pageItems.length - 1].sku,
+              name: pageItems[pageItems.length - 1].name
+            } : null
+          });
+          
+          if (pageItems.length === 0) {
+            console.log('No items received for this page, will retry...');
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 5000 * (retryCount + 1)));
+            continue;
+          }
+          
+          // Check for duplicate items in this page
+          const pageSkus = new Set(pageItems.map(item => item.sku));
+          if (pageSkus.size !== pageItems.length) {
+            console.warn(`WARNING: Page ${currentPage} contains duplicate SKUs!`);
+            console.warn(`Items in page: ${pageItems.length}, Unique SKUs: ${pageSkus.size}`);
+          }
+          
+          // Check for duplicates with existing items
+          const existingSkus = new Set(allCourses.map(course => course.sku));
+          const duplicatesInPage = pageItems.filter(item => existingSkus.has(item.sku));
+          if (duplicatesInPage.length > 0) {
+            console.warn(`WARNING: Page ${currentPage} contains ${duplicatesInPage.length} items that already exist in our collection!`);
+            console.warn('Duplicate SKUs:', duplicatesInPage.map(item => item.sku));
+          }
+          
+          allCourses = [...allCourses, ...pageItems];
+          console.log(`Total courses collected so far: ${allCourses.length}`);
+          success = true;
+          
+          // Add a small delay between requests to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error) {
+          console.error(`Error fetching page ${currentPage} (Attempt ${retryCount + 1}/${MAX_RETRIES}):`, error.message);
+          if (error.response) {
+            console.error('Error response:', {
+              status: error.response.status,
+              statusText: error.response.statusText,
+              data: error.response.data
+            });
+          }
+          retryCount++;
+          if (retryCount < MAX_RETRIES) {
+            console.log(`Waiting ${5 * retryCount} seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 5000 * retryCount));
+          } else {
+            failedPages.add(currentPage);
+          }
+        }
+      }
+      
+      if (!success) {
+        console.error(`Failed to fetch page ${currentPage} after ${MAX_RETRIES} attempts`);
+      }
+      
+      currentPage++;
     }
-
-    // Verify no duplicate IDs
-    const courseIds = new Set(allCourses.map(course => course.id));
-    console.log('\nVerification:');
-    console.log(`Total unique course IDs: ${courseIds.size}`);
+    
+    if (failedPages.size > 0) {
+      console.error('\nFailed to fetch the following pages:', Array.from(failedPages));
+    }
+    
+    console.log('\nFinal Results:');
     console.log(`Total courses collected: ${allCourses.length}`);
+    console.log(`Expected courses: ${totalCourses}`);
+    console.log(`Difference: ${allCourses.length - totalCourses}`);
     
-    if (courseIds.size !== allCourses.length) {
-      console.log('WARNING: Duplicate courses detected!');
-      // Remove duplicates
-      allCourses = Array.from(new Map(allCourses.map(course => [course.id, course])).values());
-      console.log(`After removing duplicates: ${allCourses.length} courses`);
-    }
-
-    // Create the complete data object
-    const completeData = {
-      ...initialResponse.data,
-      items: allCourses,
-      total: allCourses.length,
-      page_size: pageSize,
-      current_page: 0
-    };
-
-    // Save to public folder
-    const publicPath = path.join(__dirname, '../public');
-    if (!fs.existsSync(publicPath)) {
-      fs.mkdirSync(publicPath, { recursive: true });
-    }
-
-    const filePath = path.join(publicPath, 'courses.json');
-    fs.writeFileSync(filePath, JSON.stringify(completeData, null, 2));
+    // Save all courses to public/courses.json
+    const outputPath = path.join(process.cwd(), 'public', 'courses.json');
+    fs.writeFileSync(outputPath, JSON.stringify(allCourses, null, 2));
+    console.log(`\nSaved ${allCourses.length} courses to ${outputPath}`);
     
-    console.log(`\nSuccessfully saved ${allCourses.length} courses to ${filePath}`);
-    
-    // Verify the saved file
-    const savedData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    console.log('Verification of saved file:', {
-      total_courses: savedData.total,
-      items_length: savedData.items.length,
-      first_item_id: savedData.items[0]?.id,
-      last_item_id: savedData.items[savedData.items.length - 1]?.id
-    });
   } catch (error) {
-    console.error('Error in fetchAllCourses:', error);
+    console.error('Error fetching courses:', error);
     process.exit(1);
   }
 }
