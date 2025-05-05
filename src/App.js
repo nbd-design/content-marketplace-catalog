@@ -273,9 +273,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      <header className="bg-white shadow p-4 mb-6">
+      <header className="bg-white shadow-xl/50 p-4 mb-8 rounded-lg">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-gray-900">Course Marketplace</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Content Marketplace Catalog</h1>
           <div className="w-1/3">
             <input
               type="text"
