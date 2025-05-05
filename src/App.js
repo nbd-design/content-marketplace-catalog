@@ -52,7 +52,7 @@ function App() {
       setError(null);
       try {
         console.log('Loading courses from static JSON...');
-        const response = await axios.get('/courses.json');
+        const response = await axios.get(`${process.env.PUBLIC_URL}/courses.json`);
         const data = response.data;
         
         // Extract filters

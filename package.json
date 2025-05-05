@@ -2,6 +2,7 @@
   "name": "content-marketplace-catalog",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://nbd-design.github.io/content-marketplace-catalog",
   "dependencies": {
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
@@ -52,6 +53,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "homepage": "https://nbd-design.github.io/content-marketplace-catalog"
+  }
 }
