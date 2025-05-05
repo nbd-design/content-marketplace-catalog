@@ -56,14 +56,15 @@ function App() {
         const baseUrl = window.location.href.includes('github.io') 
           ? 'https://nbd-design.github.io/content-marketplace-catalog'
           : '';
-        const response = await axios.get(`${baseUrl}/courses.json`);
-        console.log('Fetching courses from:', `${baseUrl}/courses.json`);
-        const data = response.data;
+        const url = `${baseUrl}/courses.json`;
+        console.log('Fetching courses from:', url);
+        const response = await axios.get(url);
+        console.log('Raw API response:', response.data);
         
         // Extract filters
-        const sponsorFilter = data.filters?.find(f => f.attribute_code === 'lcv_sponsor');
-        const fieldsOfStudyFilter = data.filters?.find(f => f.attribute_code === 'lcv_fields_of_study');
-        const programQualFilter = data.filters?.find(f => f.attribute_code === 'lcv_program_qualifications');
+        const sponsorFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_sponsor');
+        const fieldsOfStudyFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_fields_of_study');
+        const programQualFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_program_qualifications');
         
         setFilters({
           sponsors: sponsorFilter?.items || [],
@@ -72,8 +73,9 @@ function App() {
         });
 
         // Get all courses from the static JSON file
-        const allCourses = data.items || [];
+        const allCourses = response.data.items || [];
         console.log(`Loaded ${allCourses.length} total courses from static JSON`);
+        console.log('First course sample:', allCourses[0]);
         
         // Map raw items to our UI's Course shape
         const mappedCourses = allCourses.map(item => {
@@ -116,9 +118,15 @@ function App() {
         });
 
         console.log('Mapped courses:', mappedCourses.length);
+        console.log('First mapped course sample:', mappedCourses[0]);
         setCourses(mappedCourses);
       } catch (error) {
         console.error('Error loading courses from static JSON:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
         setError('Unable to load course data.');
       } finally {
         setLoading(false);

@@ -170,9 +170,15 @@ async function fetchAllCourses() {
     console.log(`Expected courses: ${totalCourses}`);
     console.log(`Difference: ${allCourses.length - totalCourses}`);
     
-    // Save all courses to public/courses.json
+    // Save all courses to public/courses.json with the correct structure
+    const outputData = {
+      items: allCourses,
+      filters: initialResponse.data.filters || [],
+      total: totalCourses
+    };
+    
     const outputPath = path.join(process.cwd(), 'public', 'courses.json');
-    fs.writeFileSync(outputPath, JSON.stringify(allCourses, null, 2));
+    fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
     console.log(`\nSaved ${allCourses.length} courses to ${outputPath}`);
     
   } catch (error) {
