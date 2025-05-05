@@ -52,7 +52,12 @@ function App() {
       setError(null);
       try {
         console.log('Loading courses from static JSON...');
-        const response = await axios.get('./courses.json');
+        // Use the full path for GitHub Pages
+        const baseUrl = window.location.href.includes('github.io') 
+          ? 'https://nbd-design.github.io/content-marketplace-catalog'
+          : '';
+        const response = await axios.get(`${baseUrl}/courses.json`);
+        console.log('Fetching courses from:', `${baseUrl}/courses.json`);
         const data = response.data;
         
         // Extract filters
