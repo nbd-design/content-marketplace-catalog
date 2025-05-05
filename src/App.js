@@ -52,7 +52,7 @@ function App() {
       setError(null);
       try {
         console.log('Loading courses from static JSON...');
-        // Use the full path for GitHub Pages
+        // Use the correct path for GitHub Pages
         const baseUrl = window.location.href.includes('github.io') 
           ? 'https://nbd-design.github.io/content-marketplace-catalog'
           : '';
@@ -71,35 +71,12 @@ function App() {
           programQualifications: programQualFilter?.items || []
         });
 
-        // Get total number of courses and page size
-        const totalCourses = data.total || 0;
-        const pageSize = data.page_size || 20;
-        const totalPages = Math.ceil(totalCourses / pageSize);
-        
-        // Fetch all pages
-        let allCourses = [];
-        for (let page = 0; page < totalPages; page++) {
-          const pageResponse = await axios.get(`/courses.json?page=${page}&page_size=${pageSize}`);
-          const pageData = pageResponse.data;
-          const pageItems = pageData.items || [];
-          allCourses = [...allCourses, ...pageItems];
-          console.log(`Loaded page ${page + 1}/${totalPages}, total courses so far: ${allCourses.length}`);
-        }
-
+        // Get all courses from the static JSON file
+        const allCourses = data.items || [];
         console.log(`Loaded ${allCourses.length} total courses from static JSON`);
         
         // Map raw items to our UI's Course shape
         const mappedCourses = allCourses.map(item => {
-          // Log raw item data for the first few items to debug
-          if (item.id <= 3915) {
-            console.log(`Raw course ${item.id}:`, {
-              id: item.id,
-              name: item.name,
-              vendor: item.vendor,
-              image_url: item.image_url
-            });
-          }
-
           const attributes = item.attributes || [];
           
           // Find all relevant attributes
@@ -135,24 +112,10 @@ function App() {
             }
           };
 
-          // Log mapped course data for the first few items to debug
-          if (item.id <= 3915) {
-            console.log(`Mapped course ${item.id}:`, courseData);
-          }
-
           return courseData;
         });
 
-        // Log a sample of mapped courses to verify all data
-        console.log('Sample of mapped courses with complete info:', mappedCourses.slice(0, 3).map(course => ({
-          id: course.id,
-          title: course.title,
-          instructor: course.instructor,
-          category: course.category,
-          level: course.level,
-          price: course.price,
-          imageUrl: course.imageUrl
-        })));
+        console.log('Mapped courses:', mappedCourses.length);
         setCourses(mappedCourses);
       } catch (error) {
         console.error('Error loading courses from static JSON:', error);
