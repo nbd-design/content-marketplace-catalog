@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 // Mock data for testing
+// eslint-disable-next-line no-unused-vars
 const mockCourses = [
   {
     id: 1,
@@ -39,6 +40,7 @@ function App() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [filters, setFilters] = useState({
     sponsors: [],
     fieldsOfStudy: [],
@@ -88,6 +90,21 @@ function App() {
           const lengthAttr = attributes.find(attr => attr.code === 'lcv_length');
           const creditsAttr = attributes.find(attr => attr.code === 'lcv_total_credits');
           
+          // Format CPE credits - divide by 50 and format with up to 3 decimal places only when needed
+          let formattedCredits = '';
+          if (creditsAttr?.option_value) {
+            const rawCredits = parseFloat(creditsAttr.option_value);
+            if (!isNaN(rawCredits)) {
+              const calculatedCredits = rawCredits / 50;
+              // Format with up to 3 decimal places, but remove trailing zeros
+              formattedCredits = calculatedCredits.toFixed(3).replace(/\.?0+$/, '');
+              // If it ends with a decimal point, remove it
+              if (formattedCredits.endsWith('.')) {
+                formattedCredits = formattedCredits.slice(0, -1);
+              }
+            }
+          }
+          
           const courseData = {
             id: item.id,
             title: item.name,
@@ -102,7 +119,8 @@ function App() {
             // Additional course details
             deliveryMethod: deliveryMethodAttr?.option_value || '',
             length: lengthAttr?.option_value || '',
-            credits: creditsAttr?.option_value || '',
+            credits: formattedCredits,
+            rawCredits: creditsAttr?.option_value || '',
             sku: item.sku,
             urlKey: item.url_key,
             productType: item.product_type,
@@ -331,6 +349,11 @@ function App() {
                   {selectedCourse.level}
                 </span>
               )}
+              {selectedCourse.credits && (
+                <span className="inline-block bg-amber-100 text-amber-800 text-sm px-2 py-1 rounded ml-2">
+                  {selectedCourse.credits} CPE Credits
+                </span>
+              )}
               <p className="my-4">{selectedCourse.description}</p>
               <div className="flex justify-between mt-6 pt-4 border-t">
                 <div>
@@ -403,6 +426,11 @@ function App() {
                           {course.deliveryMethod && (
                             <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
                               {course.deliveryMethod}
+                            </span>
+                          )}
+                          {course.credits && (
+                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-medium">
+                              {course.credits} CPE
                             </span>
                           )}
                         </div>
