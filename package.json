@@ -30,7 +30,8 @@
   "scripts": {
     "fetch-courses": "node scripts/fetchCourses.js",
     "start": "npm run fetch-courses && react-scripts start",
-    "build": "npm run fetch-courses && react-scripts build",
+    "build": "react-scripts build",
+    "build-with-fetch": "npm run fetch-courses && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
