@@ -329,12 +329,6 @@ function App() {
         ) : selectedCourse ? (
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="p-6">
-              <button
-                onClick={closeDetails}
-                className="mb-4 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-              >
-                ← Back to Catalog
-              </button>
               <h2 className="text-2xl font-bold mb-2">{selectedCourse.title}</h2>
               {selectedCourse.instructor && (
                 <p className="text-gray-600 mb-4">Instructor: {selectedCourse.instructor}</p>
@@ -371,6 +365,12 @@ function App() {
                   >
                     Get Started
                   </button>
+                  <button
+                onClick={closeDetails}
+                className="mb-4 bg-gray-200 px-4 py-2 rounded-full hover:bg-gray-300"
+              >
+                Browse More Courses
+              </button>
                 </div>
               </div>
             </div>
