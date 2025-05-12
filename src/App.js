@@ -12,24 +12,27 @@ function App() {
     fieldsOfStudy: [],
     programQualifications: [],
     sponsors: [],
+    jurisdictions: [],
     price: null,
-    jurisdictions: []
+    credits: null
   });
 
   const [availableFilters, setAvailableFilters] = useState({
     fieldsOfStudy: [],
     programQualifications: [],
     sponsors: [],
+    jurisdictions: [],
     price: { max: 279 },
-    jurisdictions: []
+    credits: { max: 0 }
   });
 
   const [expandedFilters, setExpandedFilters] = useState({
     fieldsOfStudy: false,
     programQualifications: false,
     sponsors: false,
+    jurisdictions: false,
     price: false,
-    jurisdictions: false
+    credits: false
   });
 
   // List of US states and territories
@@ -95,13 +98,22 @@ function App() {
         }).filter(j => j.count > 0)
           .sort((a, b) => b.count - a.count);
 
+        // Calculate max credits
+        const maxCredits = Math.ceil(Math.max(...response.data.items
+          .map(item => {
+            const creditsAttr = item.attributes?.find(attr => attr.code === 'lcv_total_credits');
+            return creditsAttr?.option_value ? parseFloat(creditsAttr.option_value) / 50 : 0;
+          })
+          .filter(credits => !isNaN(credits))));
+
         setAvailableFilters(prev => ({
           ...prev,
           fieldsOfStudy: fieldsOfStudyFilter?.items || [],
           programQualifications: programQualFilter?.items || [],
           sponsors: vendors,
           price: priceFilter?.items || { max: 279 },
-          jurisdictions
+          jurisdictions,
+          credits: { max: maxCredits }
         }));
 
         // Get all courses from the static JSON file
@@ -269,6 +281,14 @@ function App() {
       if (!filters.jurisdictions.some(state => 
         courseText.includes(state.toLowerCase())
       )) {
+        return false;
+      }
+    }
+
+    // Credits filter
+    if (filters.credits !== null && filters.credits > 0) {
+      const courseCredits = course.rawCredits ? Math.ceil(parseFloat(course.rawCredits) / 50) : 0;
+      if (courseCredits < filters.credits) {
         return false;
       }
     }
@@ -491,7 +511,8 @@ function App() {
                       programQualifications: [],
                       sponsors: [],
                       jurisdictions: [],
-                      price: null
+                      price: null,
+                      credits: null
                     })}
                     className="text-sm text-blue-600 hover:text-blue-800"
                   >
@@ -631,6 +652,44 @@ function App() {
                           <span className="text-gray-500 text-xs">({jurisdiction.count})</span>
                         </label>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Credits Filter */}
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => toggleFilterSection('credits')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    <span>Minimum Credits</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.credits ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.credits && (
+                    <div className="mt-4">
+                      <input
+                        type="range"
+                        min="0"
+                        max={availableFilters.credits.max}
+                        value={filters.credits || 0}
+                        onChange={(e) => handleFilterChange('credits', parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-sm text-gray-600 mt-2">
+                        <span>0</span>
+                        <span>{filters.credits || 0}</span>
+                        <span>{availableFilters.credits.max}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 text-center">
+                        CPE Credits
+                      </div>
                     </div>
                   )}
                 </div>
