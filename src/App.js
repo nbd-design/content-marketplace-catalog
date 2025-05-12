@@ -40,11 +40,11 @@ function App() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
-  // eslint-disable-next-line no-unused-vars
   const [filters, setFilters] = useState({
-    sponsors: [],
     fieldsOfStudy: [],
-    programQualifications: []
+    programQualifications: [],
+    sponsors: [],
+    price: null
   });
   const coursesPerPage = 18;
 
@@ -71,7 +71,8 @@ function App() {
         setFilters({
           sponsors: sponsorFilter?.items || [],
           fieldsOfStudy: fieldsOfStudyFilter?.items || [],
-          programQualifications: programQualFilter?.items || []
+          programQualifications: programQualFilter?.items || [],
+          price: response.data.filters?.find(f => f.attribute_code === 'lcv_price')?.items?.map(i => i.option_value) || null
         });
 
         // Get all courses from the static JSON file
@@ -129,7 +130,8 @@ function App() {
               name: item.vendor?.name,
               logo: item.vendor?.logo_src,
               link: item.vendor?.link
-            }
+            },
+            programQualifications: item.attributes?.filter(attr => attr.code === 'lcv_program_qualifications_value')?.map(attr => attr.option_value) || []
           };
 
           return courseData;
@@ -159,19 +161,54 @@ function App() {
     console.log('Courses state updated:', courses);
   }, [courses]);
 
-  const filteredCourses = searchTerm.trim()
-    ? courses.filter(course => {
-        if (!course) return false;
-        const lower = searchTerm.toLowerCase();
-        const titleMatch = course.title
-          ? course.title.toLowerCase().includes(lower)
-          : false;
-        const descriptionMatch = course.description
-          ? course.description.toLowerCase().includes(lower)
-          : false;
-        return titleMatch || descriptionMatch;
-      })
-    : courses;
+  const handleFilterChange = (filterType, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const filteredCourses = courses.filter(course => {
+    // Search term filter
+    if (searchTerm.trim()) {
+      const lower = searchTerm.toLowerCase();
+      const titleMatch = course.title?.toLowerCase().includes(lower) || false;
+      const descriptionMatch = course.description?.toLowerCase().includes(lower) || false;
+      if (!titleMatch && !descriptionMatch) return false;
+    }
+
+    // Fields of Study filter
+    if (filters.fieldsOfStudy.length > 0) {
+      if (!course.category || !filters.fieldsOfStudy.includes(course.category)) {
+        return false;
+      }
+    }
+
+    // Program Qualifications filter
+    if (filters.programQualifications.length > 0) {
+      const courseQualifications = course.programQualifications || [];
+      if (!filters.programQualifications.some(q => courseQualifications.includes(q))) {
+        return false;
+      }
+    }
+
+    // Sponsor filter
+    if (filters.sponsors.length > 0) {
+      if (!course.vendor?.name || !filters.sponsors.includes(course.vendor.name)) {
+        return false;
+      }
+    }
+
+    // Price filter
+    if (filters.price !== null) {
+      if (!course.price || course.price > filters.price) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   // Calculate pagination
   const indexOfLastCourse = currentPage * coursesPerPage;
@@ -376,93 +413,205 @@ function App() {
             </div>
           </div>
         ) : (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Available Courses</h2>
-              <p className="text-gray-600">
-                Showing {indexOfFirstCourse + 1}-{Math.min(indexOfLastCourse, filteredCourses.length)} of {filteredCourses.length} courses
-              </p>
-            </div>
-            {filteredCourses.length === 0 ? (
-              <div className="bg-white shadow rounded-lg p-12 text-center">
-                <p className="text-gray-600">No courses found. Try adjusting your search.</p>
+          <div className="flex gap-8">
+            {/* Filter Sidebar */}
+            <div className="w-64 flex-shrink-0">
+              <div className="bg-white rounded-lg shadow p-4">
+                <h3 className="font-semibold text-lg mb-4">Filters</h3>
+                
+                {/* Fields of Study Filter */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Fields of Study
+                  </label>
+                  <select
+                    multiple
+                    value={filters.fieldsOfStudy}
+                    onChange={(e) => {
+                      const values = Array.from(e.target.selectedOptions, option => option.value);
+                      handleFilterChange('fieldsOfStudy', values);
+                    }}
+                    className="w-full border rounded-lg p-2 text-sm"
+                    size="5"
+                  >
+                    {filters.fieldsOfStudy.map((field) => (
+                      <option key={field.id} value={field.value}>
+                        {field.value} ({field.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Program Qualifications Filter */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Program Qualifications
+                  </label>
+                  <select
+                    multiple
+                    value={filters.programQualifications}
+                    onChange={(e) => {
+                      const values = Array.from(e.target.selectedOptions, option => option.value);
+                      handleFilterChange('programQualifications', values);
+                    }}
+                    className="w-full border rounded-lg p-2 text-sm"
+                    size="5"
+                  >
+                    {filters.programQualifications.map((qual) => (
+                      <option key={qual.id} value={qual.value}>
+                        {qual.value} ({qual.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sponsor Filter */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sponsor
+                  </label>
+                  <select
+                    multiple
+                    value={filters.sponsors}
+                    onChange={(e) => {
+                      const values = Array.from(e.target.selectedOptions, option => option.value);
+                      handleFilterChange('sponsors', values);
+                    }}
+                    className="w-full border rounded-lg p-2 text-sm"
+                    size="3"
+                  >
+                    {filters.sponsors.map((sponsor) => (
+                      <option key={sponsor.id} value={sponsor.value}>
+                        {sponsor.value} ({sponsor.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Price Range Filter */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Maximum Price
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="279"
+                    value={filters.price || 0}
+                    onChange={(e) => handleFilterChange('price', parseInt(e.target.value))}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-sm text-gray-600 mt-1">
+                    <span>$0</span>
+                    <span>${filters.price || 0}</span>
+                    <span>$279</span>
+                  </div>
+                </div>
+
+                {/* Clear Filters Button */}
+                <button
+                  onClick={() => setFilters({
+                    fieldsOfStudy: [],
+                    programQualifications: [],
+                    sponsors: [],
+                    price: null
+                  })}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm"
+                >
+                  Clear All Filters
+                </button>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {currentCourses.map((course) => (
-                    <div
-                      key={course.id}
-                      className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => viewCourseDetails(course)}
-                    >
-                      <div className="h-48 relative overflow-hidden">
-                        <img 
-                          src={course.imageUrl}
-                          alt={course.title}
-                          className="w-full h-full object-cover transition-opacity duration-300"
-                          onError={(e) => {
-                            console.log(`Image error for course ${course.id}:`, course.imageUrl);
-                            e.target.onerror = null; // Prevent infinite loop
-                            e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
-                          }}
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-1 text-gray-900">{course.title}</h3>
-                        {course.instructor && (
-                          <p className="text-sm text-gray-600 mb-2">By {course.instructor}</p>
-                        )}
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                          {course.description}
-                        </p>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {course.category && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                              {course.category}
-                            </span>
-                          )}
-                          {course.level && (
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                              {course.level}
-                            </span>
-                          )}
-                          {course.deliveryMethod && (
-                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                              {course.deliveryMethod}
-                            </span>
-                          )}
-                          {course.credits && (
-                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-medium">
-                              {course.credits} CPE
-                            </span>
-                          )}
+            </div>
+
+            {/* Course Grid */}
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Available Courses</h2>
+                <p className="text-gray-600">
+                  Showing {indexOfFirstCourse + 1}-{Math.min(indexOfLastCourse, filteredCourses.length)} of {filteredCourses.length} courses
+                </p>
+              </div>
+              {filteredCourses.length === 0 ? (
+                <div className="bg-white shadow rounded-lg p-12 text-center">
+                  <p className="text-gray-600">No courses found. Try adjusting your search.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {currentCourses.map((course) => (
+                      <div
+                        key={course.id}
+                        className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => viewCourseDetails(course)}
+                      >
+                        <div className="h-48 relative overflow-hidden">
+                          <img 
+                            src={course.imageUrl}
+                            alt={course.title}
+                            className="w-full h-full object-cover transition-opacity duration-300"
+                            onError={(e) => {
+                              console.log(`Image error for course ${course.id}:`, course.imageUrl);
+                              e.target.onerror = null; // Prevent infinite loop
+                              e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                            }}
+                          />
                         </div>
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center">
-                            {course.price ? (
-                              <p className="font-bold text-green-600">${course.price.toFixed(2)}</p>
-                            ) : (
-                              <p className="font-bold text-green-600">Free</p>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-lg mb-1 text-gray-900">{course.title}</h3>
+                          {course.instructor && (
+                            <p className="text-sm text-gray-600 mb-2">By {course.instructor}</p>
+                          )}
+                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                            {course.description}
+                          </p>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {course.category && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                {course.category}
+                              </span>
                             )}
-                          </div>
-                          <div className="flex items-center">
-                            {course.length && (
-                              <span className="text-sm text-gray-600">
-                                {course.length}
+                            {course.level && (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                {course.level}
+                              </span>
+                            )}
+                            {course.deliveryMethod && (
+                              <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                {course.deliveryMethod}
+                              </span>
+                            )}
+                            {course.credits && (
+                              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-medium">
+                                {course.credits} CPE
                               </span>
                             )}
                           </div>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                              {course.price ? (
+                                <p className="font-bold text-green-600">${course.price.toFixed(2)}</p>
+                              ) : (
+                                <p className="font-bold text-green-600">Free</p>
+                              )}
+                            </div>
+                            <div className="flex items-center">
+                              {course.length && (
+                                <span className="text-sm text-gray-600">
+                                  {course.length}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {renderPagination()}
-              </>
-            )}
-          </>
+                    ))}
+                  </div>
+                  
+                  {renderPagination()}
+                </>
+              )}
+            </div>
+          </div>
         )}
       </main>
     </div>
