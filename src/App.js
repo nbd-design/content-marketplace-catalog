@@ -1,38 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Mock data for testing
-// eslint-disable-next-line no-unused-vars
-const mockCourses = [
-  {
-    id: 1,
-    title: "Introduction to Web Development",
-    description: "Learn the basics of web development including HTML, CSS, and JavaScript.",
-    instructor: "John Doe",
-    price: 49.99,
-    level: "Beginner",
-    category: "Web Development"
-  },
-  {
-    id: 2,
-    title: "Advanced React Patterns",
-    description: "Master advanced React patterns and best practices for building scalable applications.",
-    instructor: "Jane Smith",
-    price: 79.99,
-    level: "Advanced",
-    category: "Frontend Development"
-  },
-  {
-    id: 3,
-    title: "Node.js Backend Development",
-    description: "Build robust backend services using Node.js and Express.",
-    instructor: "Mike Johnson",
-    price: 69.99,
-    level: "Intermediate",
-    category: "Backend Development"
-  }
-];
-
 function App() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -280,13 +248,6 @@ function App() {
       }
     }
 
-    // Price filter
-    if (filters.price !== null && filters.price > 0) {
-      if (!course.price || course.price > filters.price) {
-        return false;
-      }
-    }
-
     // Jurisdiction filter
     if (filters.jurisdictions.length > 0) {
       const courseText = [
@@ -301,6 +262,13 @@ function App() {
       if (!filters.jurisdictions.some(state => 
         courseText.includes(state.toLowerCase())
       )) {
+        return false;
+      }
+    }
+
+    // Price filter
+    if (filters.price !== null && filters.price > 0) {
+      if (!course.price || course.price > filters.price) {
         return false;
       }
     }
