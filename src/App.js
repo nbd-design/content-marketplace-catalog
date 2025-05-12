@@ -78,15 +78,25 @@ function App() {
         console.log('Raw API response:', response.data);
         
         // Extract filters
-        const sponsorFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_sponsor');
         const fieldsOfStudyFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_fields_of_study');
         const programQualFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_program_qualifications');
         const priceFilter = response.data.filters?.find(f => f.attribute_code === 'price');
         
+        // Get unique vendors from courses
+        const vendors = Array.from(new Set(response.data.items
+          .filter(item => item.vendor?.name)
+          .map(item => item.vendor.name)))
+          .map(name => ({
+            id: response.data.items.find(item => item.vendor?.name === name)?.vendor?.id,
+            value: name,
+            count: response.data.items.filter(course => course.vendor?.name === name).length
+          }))
+          .sort((a, b) => b.count - a.count); // Sort by count descending
+        
         setAvailableFilters({
-          sponsors: sponsorFilter?.items || [],
           fieldsOfStudy: fieldsOfStudyFilter?.items || [],
           programQualifications: programQualFilter?.items || [],
+          sponsors: vendors,
           price: priceFilter?.items || { max: 279 }
         });
 
