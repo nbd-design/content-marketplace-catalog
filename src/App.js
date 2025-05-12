@@ -331,7 +331,7 @@ function App() {
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-2">{selectedCourse.title}</h2>
               {selectedCourse.instructor && (
-                <p className="text-gray-600 mb-4">Instructor: {selectedCourse.instructor}</p>
+                <p className="text-gray-600 mb-4">Provider: {selectedCourse.instructor}</p>
               )}
               {selectedCourse.category && (
                 <span className="inline-block bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded mr-2">
@@ -358,7 +358,7 @@ function App() {
                   )}
                 </div>
                 <div className="flex items-center gap-4">
-                  <p className="text-gray-600">Not an LCvista user, get in touch with our team to get started.</p>
+                  <p className="text-sm text-gray-400">Not an LCvista user, get in touch with our team to get started.</p>
                   <button
                     onClick={() => window.open('https://www.lcvista.com/contact', '_blank')}
                     className="bg-[#344C4D] hover:bg-[#233333] text-[#C4E51A] px-6 py-2 rounded-full"
@@ -367,7 +367,7 @@ function App() {
                   </button>
                   <button
                 onClick={closeDetails}
-                className="mb-4 bg-gray-200 px-4 py-2 rounded-full hover:bg-gray-300"
+                className=" bg-gray-200 px-4 py-2 rounded-full hover:bg-gray-300"
               >
                 Browse More Courses
               </button>
@@ -439,16 +439,20 @@ function App() {
                           )}
                         </div>
                         <div className="flex justify-between items-center">
-                          {course.price ? (
-                            <p className="font-bold text-green-600">${course.price.toFixed(2)}</p>
-                          ) : (
-                            <p className="font-bold text-green-600">Free</p>
-                          )}
-                          {course.length && (
-                            <span className="text-sm text-gray-600">
-                              {course.length}
-                            </span>
-                          )}
+                          <div className="flex items-center">
+                            {course.price ? (
+                              <p className="font-bold text-green-600">${course.price.toFixed(2)}</p>
+                            ) : (
+                              <p className="font-bold text-green-600">Free</p>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            {course.length && (
+                              <span className="text-sm text-gray-600">
+                                {course.length}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
