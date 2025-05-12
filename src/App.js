@@ -35,6 +35,8 @@ function App() {
     credits: false
   });
 
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+
   // List of US states and territories
   const US_STATES = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
@@ -500,8 +502,27 @@ function App() {
           </div>
         ) : (
           <div className="flex gap-8">
-            {/* Filter Sidebar */}
-            <div className="w-64 flex-shrink-0">
+            {/* Mobile Filter Button */}
+            <button
+              onClick={() => setIsFilterMenuOpen(true)}
+              className="lg:hidden fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg z-40 flex items-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span>Filters</span>
+            </button>
+
+            {/* Mobile Filter Menu Backdrop */}
+            {isFilterMenuOpen && (
+              <div
+                className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+                onClick={() => setIsFilterMenuOpen(false)}
+              />
+            )}
+
+            {/* Filter Sidebar - Desktop */}
+            <div className="hidden lg:block w-64 flex-shrink-0">
               <div className="bg-white rounded-lg shadow p-4 sticky top-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-semibold text-lg">Filters</h3>
@@ -727,6 +748,255 @@ function App() {
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Sidebar - Mobile */}
+            <div
+              className={`lg:hidden fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+                isFilterMenuOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
+              <div className="h-full flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h3 className="font-semibold text-lg">Filters</h3>
+                  <button
+                    onClick={() => setIsFilterMenuOpen(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {/* Fields of Study Filter */}
+                  <div className="mb-4 border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() => toggleFilterSection('fieldsOfStudy')}
+                      className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                    >
+                      <span>Fields of Study</span>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${expandedFilters.fieldsOfStudy ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {expandedFilters.fieldsOfStudy && (
+                      <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                        {availableFilters.fieldsOfStudy.map((field) => (
+                          <label key={field.id} className="flex items-center space-x-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={filters.fieldsOfStudy.includes(field.value)}
+                              onChange={() => handleCheckboxChange('fieldsOfStudy', field.value)}
+                              className="rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-700">{field.value}</span>
+                            <span className="text-gray-500 text-xs">({field.count})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Program Qualifications Filter */}
+                  <div className="mb-4 border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() => toggleFilterSection('programQualifications')}
+                      className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                    >
+                      <span>Program Qualifications</span>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${expandedFilters.programQualifications ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {expandedFilters.programQualifications && (
+                      <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                        {availableFilters.programQualifications.map((qual) => (
+                          <label key={qual.id} className="flex items-center space-x-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={filters.programQualifications.includes(qual.value)}
+                              onChange={() => handleCheckboxChange('programQualifications', qual.value)}
+                              className="rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-700">{qual.value}</span>
+                            <span className="text-gray-500 text-xs">({qual.count})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sponsor Filter */}
+                  <div className="mb-4 border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() => toggleFilterSection('sponsors')}
+                      className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                    >
+                      <span>Sponsor</span>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${expandedFilters.sponsors ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {expandedFilters.sponsors && (
+                      <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                        {availableFilters.sponsors.map((sponsor) => (
+                          <label key={sponsor.id} className="flex items-center space-x-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={filters.sponsors.includes(sponsor.value)}
+                              onChange={() => handleCheckboxChange('sponsors', sponsor.value)}
+                              className="rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-700">{sponsor.value}</span>
+                            <span className="text-gray-500 text-xs">({sponsor.count})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Jurisdiction Filter */}
+                  <div className="mb-4 border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() => toggleFilterSection('jurisdictions')}
+                      className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                    >
+                      <span>Jurisdictions</span>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${expandedFilters.jurisdictions ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {expandedFilters.jurisdictions && (
+                      <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                        {availableFilters.jurisdictions.map((jurisdiction) => (
+                          <label key={jurisdiction.id} className="flex items-center space-x-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={filters.jurisdictions.includes(jurisdiction.value)}
+                              onChange={() => handleCheckboxChange('jurisdictions', jurisdiction.value)}
+                              className="rounded text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-700">{jurisdiction.value}</span>
+                            <span className="text-gray-500 text-xs">({jurisdiction.count})</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Credits Filter */}
+                  <div className="mb-4 border-b border-gray-200 pb-4">
+                    <button
+                      onClick={() => toggleFilterSection('credits')}
+                      className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                    >
+                      <span>Minimum Credits</span>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${expandedFilters.credits ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {expandedFilters.credits && (
+                      <div className="mt-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max={availableFilters.credits.max}
+                          value={filters.credits || 0}
+                          onChange={(e) => handleFilterChange('credits', parseInt(e.target.value))}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-sm text-gray-600 mt-2">
+                          <span>0</span>
+                          <span>{filters.credits || 0}</span>
+                          <span>{availableFilters.credits.max}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 text-center">
+                          CPE Credits
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price Range Filter */}
+                  <div className="mb-4">
+                    <button
+                      onClick={() => toggleFilterSection('price')}
+                      className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                    >
+                      <span>Maximum Price</span>
+                      <svg
+                        className={`w-5 h-5 transform transition-transform ${expandedFilters.price ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {expandedFilters.price && (
+                      <div className="mt-4">
+                        <input
+                          type="range"
+                          min="0"
+                          max={availableFilters.price.max}
+                          value={filters.price || 0}
+                          onChange={(e) => handleFilterChange('price', parseInt(e.target.value))}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-sm text-gray-600 mt-2">
+                          <span>$0</span>
+                          <span>${filters.price || 0}</span>
+                          <span>${availableFilters.price.max}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="p-4 border-t">
+                  <button
+                    onClick={() => {
+                      setFilters({
+                        fieldsOfStudy: [],
+                        programQualifications: [],
+                        sponsors: [],
+                        jurisdictions: [],
+                        price: null,
+                        credits: null
+                      });
+                      setIsFilterMenuOpen(false);
+                    }}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm"
+                  >
+                    Clear All Filters
+                  </button>
                 </div>
               </div>
             </div>
