@@ -44,22 +44,38 @@ function App() {
     fieldsOfStudy: [],
     programQualifications: [],
     sponsors: [],
-    price: null
+    price: null,
+    jurisdictions: []
   });
 
   const [availableFilters, setAvailableFilters] = useState({
     fieldsOfStudy: [],
     programQualifications: [],
     sponsors: [],
-    price: { max: 279 }
+    price: { max: 279 },
+    jurisdictions: []
   });
 
   const [expandedFilters, setExpandedFilters] = useState({
     fieldsOfStudy: true,
     programQualifications: true,
     sponsors: true,
-    price: true
+    price: true,
+    jurisdictions: true
   });
+
+  // List of US states and territories
+  const US_STATES = [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+    'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+    'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+    'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+    'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+    'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+    'Wisconsin', 'Wyoming', 'District of Columbia', 'Puerto Rico', 'Guam', 'American Samoa',
+    'U.S. Virgin Islands', 'Northern Mariana Islands'
+  ];
 
   const coursesPerPage = 18;
 
@@ -93,12 +109,32 @@ function App() {
           }))
           .sort((a, b) => b.count - a.count); // Sort by count descending
         
-        setAvailableFilters({
+        // Extract jurisdictions from course data
+        const jurisdictions = US_STATES.map(state => {
+          const count = response.data.items.filter(item => {
+            const searchText = [
+              item.name,
+              item.short_description,
+              ...(item.attributes || []).map(attr => attr.option_value || '')
+            ].join(' ').toLowerCase();
+            return searchText.includes(state.toLowerCase());
+          }).length;
+          return {
+            id: state,
+            value: state,
+            count
+          };
+        }).filter(j => j.count > 0)
+          .sort((a, b) => b.count - a.count);
+
+        setAvailableFilters(prev => ({
+          ...prev,
           fieldsOfStudy: fieldsOfStudyFilter?.items || [],
           programQualifications: programQualFilter?.items || [],
           sponsors: vendors,
-          price: priceFilter?.items || { max: 279 }
-        });
+          price: priceFilter?.items || { max: 279 },
+          jurisdictions
+        }));
 
         // Get all courses from the static JSON file
         const allCourses = response.data.items || [];
@@ -247,6 +283,24 @@ function App() {
     // Price filter
     if (filters.price !== null && filters.price > 0) {
       if (!course.price || course.price > filters.price) {
+        return false;
+      }
+    }
+
+    // Jurisdiction filter
+    if (filters.jurisdictions.length > 0) {
+      const courseText = [
+        course.title,
+        course.description,
+        course.category,
+        course.level,
+        course.deliveryMethod,
+        ...course.programQualifications
+      ].join(' ').toLowerCase();
+
+      if (!filters.jurisdictions.some(state => 
+        courseText.includes(state.toLowerCase())
+      )) {
         return false;
       }
     }
@@ -468,7 +522,8 @@ function App() {
                       fieldsOfStudy: [],
                       programQualifications: [],
                       sponsors: [],
-                      price: null
+                      price: null,
+                      jurisdictions: []
                     })}
                     className="text-sm text-blue-600 hover:text-blue-800"
                   >
@@ -609,6 +664,40 @@ function App() {
                         <span>${filters.price || 0}</span>
                         <span>${availableFilters.price.max}</span>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Jurisdiction Filter */}
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => toggleFilterSection('jurisdictions')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    <span>Jurisdictions</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.jurisdictions ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.jurisdictions && (
+                    <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                      {availableFilters.jurisdictions.map((jurisdiction) => (
+                        <label key={jurisdiction.id} className="flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.jurisdictions.includes(jurisdiction.value)}
+                            onChange={() => handleCheckboxChange('jurisdictions', jurisdiction.value)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">{jurisdiction.value}</span>
+                          <span className="text-gray-500 text-xs">({jurisdiction.count})</span>
+                        </label>
+                      ))}
                     </div>
                   )}
                 </div>
