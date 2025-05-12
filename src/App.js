@@ -57,11 +57,11 @@ function App() {
   });
 
   const [expandedFilters, setExpandedFilters] = useState({
-    fieldsOfStudy: true,
-    programQualifications: true,
-    sponsors: true,
-    price: true,
-    jurisdictions: true
+    fieldsOfStudy: false,
+    programQualifications: false,
+    sponsors: false,
+    price: false,
+    jurisdictions: false
   });
 
   // List of US states and territories
