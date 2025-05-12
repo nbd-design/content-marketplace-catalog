@@ -54,6 +54,13 @@ function App() {
     price: { max: 279 }
   });
 
+  const [expandedFilters, setExpandedFilters] = useState({
+    fieldsOfStudy: true,
+    programQualifications: true,
+    sponsors: true,
+    price: true
+  });
+
   const coursesPerPage = 18;
 
   useEffect(() => {
@@ -173,6 +180,27 @@ function App() {
       [filterType]: value
     }));
     setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const toggleFilterSection = (section) => {
+    setExpandedFilters(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const handleCheckboxChange = (filterType, value) => {
+    setFilters(prev => {
+      const currentValues = prev[filterType] || [];
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter(v => v !== value)
+        : [...currentValues, value];
+      return {
+        ...prev,
+        [filterType]: newValues
+      };
+    });
+    setCurrentPage(1);
   };
 
   const filteredCourses = courses.filter(course => {
@@ -423,109 +451,157 @@ function App() {
             {/* Filter Sidebar */}
             <div className="w-64 flex-shrink-0">
               <div className="bg-white rounded-lg shadow p-4 sticky top-4">
-                <h3 className="font-semibold text-lg mb-4">Filters</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-lg">Filters</h3>
+                  <button
+                    onClick={() => setFilters({
+                      fieldsOfStudy: [],
+                      programQualifications: [],
+                      sponsors: [],
+                      price: null
+                    })}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Clear All
+                  </button>
+                </div>
                 
                 {/* Fields of Study Filter */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fields of Study
-                  </label>
-                  <select
-                    multiple
-                    value={filters.fieldsOfStudy}
-                    onChange={(e) => {
-                      const values = Array.from(e.target.selectedOptions, option => option.value);
-                      handleFilterChange('fieldsOfStudy', values);
-                    }}
-                    className="w-full border rounded-lg p-2 text-sm"
-                    size="5"
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => toggleFilterSection('fieldsOfStudy')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
                   >
-                    {availableFilters.fieldsOfStudy.map((field) => (
-                      <option key={field.id} value={field.value}>
-                        {field.value} ({field.count})
-                      </option>
-                    ))}
-                  </select>
+                    <span>Fields of Study</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.fieldsOfStudy ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.fieldsOfStudy && (
+                    <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                      {availableFilters.fieldsOfStudy.map((field) => (
+                        <label key={field.id} className="flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.fieldsOfStudy.includes(field.value)}
+                            onChange={() => handleCheckboxChange('fieldsOfStudy', field.value)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">{field.value}</span>
+                          <span className="text-gray-500 text-xs">({field.count})</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Program Qualifications Filter */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Program Qualifications
-                  </label>
-                  <select
-                    multiple
-                    value={filters.programQualifications}
-                    onChange={(e) => {
-                      const values = Array.from(e.target.selectedOptions, option => option.value);
-                      handleFilterChange('programQualifications', values);
-                    }}
-                    className="w-full border rounded-lg p-2 text-sm"
-                    size="5"
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => toggleFilterSection('programQualifications')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
                   >
-                    {availableFilters.programQualifications.map((qual) => (
-                      <option key={qual.id} value={qual.value}>
-                        {qual.value} ({qual.count})
-                      </option>
-                    ))}
-                  </select>
+                    <span>Program Qualifications</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.programQualifications ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.programQualifications && (
+                    <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                      {availableFilters.programQualifications.map((qual) => (
+                        <label key={qual.id} className="flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.programQualifications.includes(qual.value)}
+                            onChange={() => handleCheckboxChange('programQualifications', qual.value)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">{qual.value}</span>
+                          <span className="text-gray-500 text-xs">({qual.count})</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Sponsor Filter */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sponsor
-                  </label>
-                  <select
-                    multiple
-                    value={filters.sponsors}
-                    onChange={(e) => {
-                      const values = Array.from(e.target.selectedOptions, option => option.value);
-                      handleFilterChange('sponsors', values);
-                    }}
-                    className="w-full border rounded-lg p-2 text-sm"
-                    size="3"
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => toggleFilterSection('sponsors')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
                   >
-                    {availableFilters.sponsors.map((sponsor) => (
-                      <option key={sponsor.id} value={sponsor.value}>
-                        {sponsor.value} ({sponsor.count})
-                      </option>
-                    ))}
-                  </select>
+                    <span>Sponsor</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.sponsors ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.sponsors && (
+                    <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                      {availableFilters.sponsors.map((sponsor) => (
+                        <label key={sponsor.id} className="flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.sponsors.includes(sponsor.value)}
+                            onChange={() => handleCheckboxChange('sponsors', sponsor.value)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">{sponsor.value}</span>
+                          <span className="text-gray-500 text-xs">({sponsor.count})</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Price Range Filter */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Maximum Price
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max={availableFilters.price.max}
-                    value={filters.price || 0}
-                    onChange={(e) => handleFilterChange('price', parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-gray-600 mt-1">
-                    <span>$0</span>
-                    <span>${filters.price || 0}</span>
-                    <span>${availableFilters.price.max}</span>
-                  </div>
+                <div className="mb-4">
+                  <button
+                    onClick={() => toggleFilterSection('price')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    <span>Maximum Price</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.price ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.price && (
+                    <div className="mt-4">
+                      <input
+                        type="range"
+                        min="0"
+                        max={availableFilters.price.max}
+                        value={filters.price || 0}
+                        onChange={(e) => handleFilterChange('price', parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-sm text-gray-600 mt-2">
+                        <span>$0</span>
+                        <span>${filters.price || 0}</span>
+                        <span>${availableFilters.price.max}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Clear Filters Button */}
-                <button
-                  onClick={() => setFilters({
-                    fieldsOfStudy: [],
-                    programQualifications: [],
-                    sponsors: [],
-                    price: null
-                  })}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm"
-                >
-                  Clear All Filters
-                </button>
               </div>
             </div>
 
