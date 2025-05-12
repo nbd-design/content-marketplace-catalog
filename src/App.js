@@ -601,6 +601,40 @@ function App() {
                   )}
                 </div>
 
+                {/* Jurisdiction Filter */}
+                <div className="mb-4 border-b border-gray-200 pb-4">
+                  <button
+                    onClick={() => toggleFilterSection('jurisdictions')}
+                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    <span>Jurisdictions</span>
+                    <svg
+                      className={`w-5 h-5 transform transition-transform ${expandedFilters.jurisdictions ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedFilters.jurisdictions && (
+                    <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                      {availableFilters.jurisdictions.map((jurisdiction) => (
+                        <label key={jurisdiction.id} className="flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={filters.jurisdictions.includes(jurisdiction.value)}
+                            onChange={() => handleCheckboxChange('jurisdictions', jurisdiction.value)}
+                            className="rounded text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">{jurisdiction.value}</span>
+                          <span className="text-gray-500 text-xs">({jurisdiction.count})</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Price Range Filter */}
                 <div className="mb-4">
                   <button
@@ -632,40 +666,6 @@ function App() {
                         <span>${filters.price || 0}</span>
                         <span>${availableFilters.price.max}</span>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Jurisdiction Filter */}
-                <div className="mb-4 border-b border-gray-200 pb-4">
-                  <button
-                    onClick={() => toggleFilterSection('jurisdictions')}
-                    className="w-full flex justify-between items-center text-left font-medium text-gray-700 hover:text-gray-900"
-                  >
-                    <span>Jurisdictions</span>
-                    <svg
-                      className={`w-5 h-5 transform transition-transform ${expandedFilters.jurisdictions ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {expandedFilters.jurisdictions && (
-                    <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
-                      {availableFilters.jurisdictions.map((jurisdiction) => (
-                        <label key={jurisdiction.id} className="flex items-center space-x-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={filters.jurisdictions.includes(jurisdiction.value)}
-                            onChange={() => handleCheckboxChange('jurisdictions', jurisdiction.value)}
-                            className="rounded text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-gray-700">{jurisdiction.value}</span>
-                          <span className="text-gray-500 text-xs">({jurisdiction.count})</span>
-                        </label>
-                      ))}
                     </div>
                   )}
                 </div>
