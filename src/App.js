@@ -248,6 +248,13 @@ function App() {
       }
     }
 
+    // Price filter
+    if (filters.price !== null && filters.price > 0) {
+      if (!course.price || course.price > filters.price) {
+        return false;
+      }
+    }
+
     // Jurisdiction filter
     if (filters.jurisdictions.length > 0) {
       const courseText = [
@@ -262,13 +269,6 @@ function App() {
       if (!filters.jurisdictions.some(state => 
         courseText.includes(state.toLowerCase())
       )) {
-        return false;
-      }
-    }
-
-    // Price filter
-    if (filters.price !== null && filters.price > 0) {
-      if (!course.price || course.price > filters.price) {
         return false;
       }
     }
@@ -490,8 +490,8 @@ function App() {
                       fieldsOfStudy: [],
                       programQualifications: [],
                       sponsors: [],
-                      price: null,
-                      jurisdictions: []
+                      jurisdictions: [],
+                      price: null
                     })}
                     className="text-sm text-blue-600 hover:text-blue-800"
                   >
