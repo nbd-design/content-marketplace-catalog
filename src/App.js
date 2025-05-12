@@ -46,6 +46,14 @@ function App() {
     sponsors: [],
     price: null
   });
+
+  const [availableFilters, setAvailableFilters] = useState({
+    fieldsOfStudy: [],
+    programQualifications: [],
+    sponsors: [],
+    price: { max: 279 }
+  });
+
   const coursesPerPage = 18;
 
   useEffect(() => {
@@ -54,7 +62,6 @@ function App() {
       setError(null);
       try {
         console.log('Loading courses from static JSON...');
-        // Use the correct path for GitHub Pages
         const baseUrl = window.location.href.includes('github.io') 
           ? 'https://nbd-design.github.io/content-marketplace-catalog'
           : '';
@@ -67,12 +74,13 @@ function App() {
         const sponsorFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_sponsor');
         const fieldsOfStudyFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_fields_of_study');
         const programQualFilter = response.data.filters?.find(f => f.attribute_code === 'lcv_program_qualifications');
+        const priceFilter = response.data.filters?.find(f => f.attribute_code === 'price');
         
-        setFilters({
+        setAvailableFilters({
           sponsors: sponsorFilter?.items || [],
           fieldsOfStudy: fieldsOfStudyFilter?.items || [],
           programQualifications: programQualFilter?.items || [],
-          price: response.data.filters?.find(f => f.attribute_code === 'lcv_price')?.items?.map(i => i.option_value) || null
+          price: priceFilter?.items || { max: 279 }
         });
 
         // Get all courses from the static JSON file
@@ -90,16 +98,15 @@ function App() {
           const deliveryMethodAttr = attributes.find(attr => attr.code === 'lcv_delivery_method');
           const lengthAttr = attributes.find(attr => attr.code === 'lcv_length');
           const creditsAttr = attributes.find(attr => attr.code === 'lcv_total_credits');
+          const programQualsAttr = attributes.find(attr => attr.code === 'lcv_program_qualifications_value');
           
-          // Format CPE credits - divide by 50 and format with up to 3 decimal places only when needed
+          // Format CPE credits
           let formattedCredits = '';
           if (creditsAttr?.option_value) {
             const rawCredits = parseFloat(creditsAttr.option_value);
             if (!isNaN(rawCredits)) {
               const calculatedCredits = rawCredits / 50;
-              // Format with up to 3 decimal places, but remove trailing zeros
               formattedCredits = calculatedCredits.toFixed(3).replace(/\.?0+$/, '');
-              // If it ends with a decimal point, remove it
               if (formattedCredits.endsWith('.')) {
                 formattedCredits = formattedCredits.slice(0, -1);
               }
@@ -117,7 +124,6 @@ function App() {
             level: levelAttr?.option_value || '',
             price: item.prices_unformatted?.price || 0,
             imageUrl: item.image_url || 'https://via.placeholder.com/400x300?text=No+Image+Available',
-            // Additional course details
             deliveryMethod: deliveryMethodAttr?.option_value || '',
             length: lengthAttr?.option_value || '',
             credits: formattedCredits,
@@ -131,7 +137,7 @@ function App() {
               logo: item.vendor?.logo_src,
               link: item.vendor?.link
             },
-            programQualifications: item.attributes?.filter(attr => attr.code === 'lcv_program_qualifications_value')?.map(attr => attr.option_value) || []
+            programQualifications: programQualsAttr?.option_value ? [programQualsAttr.option_value] : []
           };
 
           return courseData;
@@ -201,7 +207,7 @@ function App() {
     }
 
     // Price filter
-    if (filters.price !== null) {
+    if (filters.price !== null && filters.price > 0) {
       if (!course.price || course.price > filters.price) {
         return false;
       }
@@ -416,7 +422,7 @@ function App() {
           <div className="flex gap-8">
             {/* Filter Sidebar */}
             <div className="w-64 flex-shrink-0">
-              <div className="bg-white rounded-lg shadow p-4">
+              <div className="bg-white rounded-lg shadow p-4 sticky top-4">
                 <h3 className="font-semibold text-lg mb-4">Filters</h3>
                 
                 {/* Fields of Study Filter */}
@@ -434,7 +440,7 @@ function App() {
                     className="w-full border rounded-lg p-2 text-sm"
                     size="5"
                   >
-                    {filters.fieldsOfStudy.map((field) => (
+                    {availableFilters.fieldsOfStudy.map((field) => (
                       <option key={field.id} value={field.value}>
                         {field.value} ({field.count})
                       </option>
@@ -457,7 +463,7 @@ function App() {
                     className="w-full border rounded-lg p-2 text-sm"
                     size="5"
                   >
-                    {filters.programQualifications.map((qual) => (
+                    {availableFilters.programQualifications.map((qual) => (
                       <option key={qual.id} value={qual.value}>
                         {qual.value} ({qual.count})
                       </option>
@@ -480,7 +486,7 @@ function App() {
                     className="w-full border rounded-lg p-2 text-sm"
                     size="3"
                   >
-                    {filters.sponsors.map((sponsor) => (
+                    {availableFilters.sponsors.map((sponsor) => (
                       <option key={sponsor.id} value={sponsor.value}>
                         {sponsor.value} ({sponsor.count})
                       </option>
@@ -496,7 +502,7 @@ function App() {
                   <input
                     type="range"
                     min="0"
-                    max="279"
+                    max={availableFilters.price.max}
                     value={filters.price || 0}
                     onChange={(e) => handleFilterChange('price', parseInt(e.target.value))}
                     className="w-full"
@@ -504,7 +510,7 @@ function App() {
                   <div className="flex justify-between text-sm text-gray-600 mt-1">
                     <span>$0</span>
                     <span>${filters.price || 0}</span>
-                    <span>$279</span>
+                    <span>${availableFilters.price.max}</span>
                   </div>
                 </div>
 
